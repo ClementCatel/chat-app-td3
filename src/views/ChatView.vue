@@ -4,34 +4,43 @@ import ChatMessage from '@/components/ChatMessage.vue'
 import AppNavbar from '@/components/AppNavbar.vue'
 import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
-import { insertMessage, fetchMessages } from '@/api/messages'
+import {
+  messageList,
+  insertMessage,
+  fetchMessages,
+  subscribeToMessages,
+  deleteMessage
+} from '@/api/messages'
 
 const { user } = storeToRefs(useUserStore())
 
 const messageText = ref('')
-const messageList = ref([])
+
+subscribeToMessages()
 
 onMounted(async () => {
-  messageList.value = await fetchMessages()
+  await fetchMessages()
+  scrollToBottom()
 })
 
 const textarea = ref(null)
 
 const addMessage = async () => {
-  console.log(messageText.value, user.value.id)
   await insertMessage(messageText.value, user.value.id)
   messageText.value = ''
 }
 
-const deleteMessage = (id) => {
-  messageList.value = messageList.value.filter((message) => message.id !== id)
+const messagesContainer = ref(null)
+
+const scrollToBottom = () => {
+  messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
 }
 </script>
 
 <template>
   <div class="flex flex-col h-full overflow-hidden">
     <AppNavbar />
-    <div class="overflow-auto grow">
+    <div class="overflow-auto grow" ref="messagesContainer">
       <div v-for="(message, index) in messageList" class="p-4" :key="index">
         <ChatMessage @delete="deleteMessage" :message="message"></ChatMessage>
       </div>

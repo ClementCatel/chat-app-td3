@@ -1,4 +1,7 @@
 import { supabase } from '@/supabase'
+import { ref } from 'vue'
+
+export const messageList = ref([])
 
 export const insertMessage = async (content, author_id) => {
   await supabase.from('messages').insert({
@@ -16,5 +19,29 @@ export const fetchMessages = async () => {
   if (error) {
     console.error('Error fetching messages:', error)
   }
-  return data.reverse()
+  messageList.value = data.reverse()
+}
+
+export const subscribeToMessages = () => {
+  supabase
+    .channel('messages_channel')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'messages'
+      },
+      async () => {
+        await fetchMessages()
+      }
+    )
+    .subscribe()
+}
+
+export const deleteMessage = async (id) => {
+  const { error } = await supabase.from('messages').delete().eq('id', id)
+  if (error) {
+    console.error('Error deleting message:', error)
+  }
 }
